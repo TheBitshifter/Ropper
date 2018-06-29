@@ -296,7 +296,7 @@ class ArchitectureMips(Architecture):
         '''
         List the mnemonic of bad instructions
         '''
-        self._badInstructions = ['j','jal', 'jalr', 'jr']
+        self._badInstructions = ['b', 'j','jal', 'jalr', 'jr']
 
     def _initGadgets(self):
         super(ArchitectureMips, self)._initGadgets()
