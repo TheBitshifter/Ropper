@@ -292,12 +292,77 @@ class ArchitectureMips(Architecture):
 
         self._searcher = SearcherMIPS()
 
+    def _initBadInstructions(self):
+        '''
+        List the mnemonic of bad instructions
+        '''
+        self._badInstructions = ['j','jal', 'jalr', 'jr']
+
     def _initGadgets(self):
         super(ArchitectureMips, self)._initGadgets()
         self._endings[gadget.GadgetType.ROP] = []
-        self._endings[gadget.GadgetType.JOP] = [(b'\x09\xf8\x20\x03', 4), # jalr t9
-                                                (b'\x08\x00\x20\x03', 4), # jr t9
-                                                (b'\x08\x00\xe0\x03', 4)] # jr ra
+        self._endings[gadget.GadgetType.JOP] = [
+                                                # jalr
+                                                (b'\x09\xf8]\x20\x40\x60\x80\xa0\xc0\xe0[\x00', 8), # jalr $r1-7
+
+                                                (b'\x09\xf8]\x00\x20\x40\x60\x80\xa0\xc0\xe0[]\x01\x02[', 8), # jalr $t1-7 or jalr $s0-7
+
+                                                (b'\x09\xf8\x00\x03', 8), # jalr $t8 ($r24)
+                                                (b'\x09\xf8\x20\x03', 8), # jalr $t9 ($r25)
+
+                                                # Probably not going to jump to $s8 because its also the frame pointer
+                                                (b'\x09\xf8\xc0\x03', 8), # jr $s8 ($r30)
+                                                # (b'\x08\x00\x20\x00', 4), # jr $at ($r1)
+                                                # (b'\x08\x00\x40\x00', 4), # jr $v0 ($r2)
+                                                # (b'\x08\x00\x60\x00', 4), # jr $v1 ($r3)
+                                                # (b'\x08\x00\x80\x00', 4), # jr $a0 ($r4)
+                                                # (b'\x08\x00\xa0\x00', 4), # jr $a1 ($r5)
+                                                # (b'\x08\x00\xc0\x00', 4), # jr $a2 ($r6)
+                                                # (b'\x08\x00\xe0\x00', 4), # jr $a3 ($r7)
+
+                                                # match any of the above (jr r1-r7)
+                                                # Note, mips big endian seems
+                                                # to reverse this array at some
+                                                # point?  Thats why the open
+                                                # and close [] are swapped.
+                                                (b'\x08\x00]\x20\x40\x60\x80\xa0\xc0\xe0[\x00', 8), # jr $r1-7
+
+                                                # (b'\x08\x00\x00\x01', 4), # jr $t0 ($r8)
+                                                # (b'\x08\x00\x20\x01', 4), # jr $t1 ($r9)
+                                                # (b'\x08\x00\x40\x01', 4), # jr $t2 ($r10)
+                                                # (b'\x08\x00\x60\x01', 4), # jr $t3 ($r11)
+                                                # (b'\x08\x00\x80\x01', 4), # jr $t4 ($r12)
+                                                # (b'\x08\x00\xa0\x01', 4), # jr $t5 ($r13)
+                                                # (b'\x08\x00\xc0\x01', 4), # jr $t6 ($r14)
+                                                # (b'\x08\x00\xe0\x01', 4), # jr $t7 ($r15)
+
+                                                # (b'\x08\x00\x00\x02', 4), # jr $s0 ($r16)
+                                                # (b'\x08\x00\x20\x02', 4), # jr $s1 ($r17)
+                                                # (b'\x08\x00\x40\x02', 4), # jr $s2 ($r18)
+                                                # (b'\x08\x00\x60\x02', 4), # jr $s3 ($r19)
+                                                # (b'\x08\x00\x80\x02', 4), # jr $s4 ($r20)
+                                                # (b'\x08\x00\xa0\x02', 4), # jr $s5 ($r21)
+                                                # (b'\x08\x00\xc0\x02', 4), # jr $s6 ($r22)
+                                                # (b'\x08\x00\xe0\x02', 4), # jr $s7 ($r23)
+                                                (b'\x08\x00]\x00\x20\x40\x60\x80\xa0\xc0\xe0[]\x01\x02[', 8), # jr $t1-7 or jr $s0-7
+
+                                                (b'\x08\x00\x00\x03', 8), # jr $t8 ($r24)
+                                                (b'\x08\x00\x20\x03', 8), # jr $t9 ($r25)
+
+                                                # Registers reserved for interrupt/trap handlers
+                                                # (b'\x08\x00\x40\x03', 4), # jr $k0 ($r26)
+                                                # (b'\x08\x00\x60\x03', 4), # jr $k1 ($r27)
+
+                                                # Probably never jumping to $gp
+                                                # (b'\x08\x00\x80\x03', 4), # jr $gp ($r28)
+
+                                                # Probably never jumping to $sp
+                                                # (b'\x08\x00\xa0\x03', 4), # jr $sp ($r29)
+
+                                                # Probably not going to jump to $s8 because its also the frame pointer
+                                                (b'\x08\x00\xc0\x03', 8), # jr $s8 ($r30)
+
+                                                (b'\x08\x00\xe0\x03', 8)] # jr $ra ($r31)
 
 
 class ArchitectureMipsBE(ArchitectureMips):
