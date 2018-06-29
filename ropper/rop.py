@@ -402,7 +402,11 @@ class Ropper(object):
         
         tmp_code = code[:]
         to_return = []
-        match = re.search(ending[0], tmp_code)
+        try:
+            match = re.search(ending[0], tmp_code)
+        except:
+            print("exeption caught for re {}".format(ending[0]))
+            raise
 
         while match:
             offset_tmp += match.start()
@@ -434,18 +438,29 @@ class Ropper(object):
         return to_return
 
     def __createGadget(self, arch, code_str, codeStartAddress, ending, binary=None, section=None):
+        need_branch_delay = False
+        if arch.__str__() in ['MIPS', 'MIPSBE']:
+            # MIPS has a jump slot, we need to take that in to account when
+            # finding gadgets because the jump slot gets executed
+            need_branch_delay = True
         gadget = Gadget(binary, section, arch)
         hasret = False
+        one_more = False
 
         disassembler = self.__getCs(arch)
 
         for i in disassembler.disasm(code_str, codeStartAddress):
             if re.match(ending[0], i.bytes):
                 hasret = True
+                if need_branch_delay:
+                    one_more = True
             
             if hasret or i.mnemonic not in arch.badInstructions:
                 gadget.append(
                     i.address, i.mnemonic,i.op_str, bytes=i.bytes)
+                if one_more:
+                    one_more = False
+                    continue
 
             if hasret or i.mnemonic in arch.badInstructions:
                 break
